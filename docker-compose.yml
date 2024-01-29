@@ -24,7 +24,7 @@ services:
       AP_OPENAI_API_KEY: ${OPENAI_API_KEY}
       AP_SIGN_UP_ENABLED: ${SIGN_UP_ENABLED}
       AP_ENCRYPTION_KEY: ${ENCRYPTION_KEY}
-      AP_PIECES_SOURCE: DB
+      AP_PIECES_SOURCE: CLOUD_AND_DB
     expose:
       - 80
     volumes:

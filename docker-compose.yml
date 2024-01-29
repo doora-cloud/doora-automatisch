@@ -4,6 +4,7 @@ services:
   app:
     image: ghcr.io/activepieces/activepieces:latest
     restart: always
+    privileged: true
     environment:
       AP_ENVIRONMENT: prod
       AP_FRONTEND_URL: ${APP_URL}

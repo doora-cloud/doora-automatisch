@@ -25,6 +25,7 @@ services:
       AP_QUEUE_MODE: REDIS
       AP_OPENAI_API_KEY: ${OPENAI_API_KEY}
       AP_SIGN_UP_ENABLED: ${SIGN_UP_ENABLED}
+      AP_ENCRYPTION_KEY: ${ENCRYPTION_KEY}
     expose:
       - 80
     volumes:

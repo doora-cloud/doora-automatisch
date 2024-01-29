@@ -25,8 +25,6 @@ services:
       AP_SIGN_UP_ENABLED: ${SIGN_UP_ENABLED}
     expose:
       - 3000
-    volumes:
-      - ${BASE_VOLUME}/automatisch:/automatisch/storage
     depends_on:
       db:
         condition: service_healthy

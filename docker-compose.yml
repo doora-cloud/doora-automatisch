@@ -2,7 +2,7 @@ version: "3.9"
 
 services:
   app:
-    image: ghcr.io/activepieces/activepieces:latest
+    image: activepieces/activepieces:latest
     restart: always
     privileged: true
     environment:
@@ -26,7 +26,9 @@ services:
       AP_OPENAI_API_KEY: ${OPENAI_API_KEY}
       AP_SIGN_UP_ENABLED: ${SIGN_UP_ENABLED}
     expose:
-      - 3000
+      - 80
+    volumes:
+      - ${BASE_VOLUME}/activepieces:/root/.activepieces
     depends_on:
       db:
         condition: service_healthy

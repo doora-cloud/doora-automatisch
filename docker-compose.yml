@@ -1,0 +1,130 @@
+version: "3.9"
+
+services:
+  app:
+    image: activepieces/activepieces:latest
+    restart: always
+    environment:
+      APP_ENV: production
+      WEB_APP_URL: ${WEB_APP_URL}
+      WEBHOOK_URL: ${WEBHOOK_URL}
+      REDIS_HOST: redis
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+      POSTGRES_HOST: db
+      POSTGRES_DATABASE: ${DB_NAME}
+      POSTGRES_USERNAME: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      ENCRYPTION_KEY: ${ENCRYPTION_KEY}
+      WEBHOOK_SECRET_KEY: ${WEBHOOK_SECRET_KEY}
+      APP_SECRET_KEY: ${APP_SECRET_KEY}
+    expose:
+      - 3000
+    volumes:
+      - ${BASE_VOLUME}/automatisch:/automatisch/storage
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    networks:
+      - internal
+      - nginx
+    deploy:
+      resources:
+        limits:
+          cpus: ${LIMIT_APP_CPU:-1}
+          memory: ${LIMIT_APP_RAM:-256M}
+        reservations:
+          cpus: '0.1'
+          memory: 128M
+  worker:
+    image: activepieces/activepieces:latest
+    restart: always
+    environment:
+      WORKER: true
+      APP_ENV: production
+      WEB_APP_URL: ${WEB_APP_URL}
+      WEBHOOK_URL: ${WEBHOOK_URL}
+      REDIS_HOST: redis
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+      POSTGRES_HOST: db
+      POSTGRES_DATABASE: ${DB_NAME}
+      POSTGRES_USERNAME: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      ENCRYPTION_KEY: ${ENCRYPTION_KEY}
+      WEBHOOK_SECRET_KEY: ${WEBHOOK_SECRET_KEY}
+      APP_SECRET_KEY: ${APP_SECRET_KEY}
+    volumes:
+      - ${BASE_VOLUME}/automatisch:/automatisch/storage
+    depends_on:
+      app:
+        condition: service_started
+    networks:
+      - internal
+    deploy:
+      resources:
+        limits:
+          cpus: ${LIMIT_WORKER_CPU:-1}
+          memory: ${LIMIT_WORKER_RAM:-256M}
+        reservations:
+          cpus: '0.1'
+          memory: 128M
+  db:
+    image: postgres:14-alpine
+    restart: always
+    environment:
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_NAME: ${DB_NAME}
+    expose:
+      - 5432
+    volumes:
+      - ${BASE_VOLUME}/postgresql:/var/lib/postgresql/data
+    networks:
+      - internal
+      - database
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          cpus: ${LIMIT_DB_CPU:-1}
+          memory: ${LIMIT_DB_RAM:-256M}
+        reservations:
+          cpus: '0.1'
+          memory: 16M
+  redis:
+    image: redis:7-alpine
+    restart: always
+    command: redis-server --save 20 1 --loglevel warning --requirepass ${REDIS_PASSWORD}
+    volumes:
+      - ${BASE_VOLUME}/redis:/data
+    expose:
+      - 6379
+    networks:
+      - internal
+      - database
+    healthcheck:
+      test: [ "CMD", "redis-cli", "--raw", "incr", "ping" ]
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          cpus: ${LIMIT_REDIS_CPU:-1}
+          memory: ${LIMIT_REDIS_RAM:-512M}
+        reservations:
+          cpus: '0.1'
+          memory: 16M
+
+
+networks:
+  internal:
+  nginx:
+    external: true
+  database:
+    external: true
+  monitoring:
+    external: true

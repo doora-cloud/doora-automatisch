@@ -2,21 +2,27 @@ version: "3.9"
 
 services:
   app:
-    image: activepieces/activepieces:latest
+    image: ghcr.io/activepieces/activepieces:latest
     restart: always
     environment:
-      APP_ENV: production
-      WEB_APP_URL: ${WEB_APP_URL}
-      WEBHOOK_URL: ${WEBHOOK_URL}
-      REDIS_HOST: redis
-      REDIS_PASSWORD: ${REDIS_PASSWORD}
-      POSTGRES_HOST: db
-      POSTGRES_DATABASE: ${DB_NAME}
-      POSTGRES_USERNAME: ${DB_USER}
-      POSTGRES_PASSWORD: ${DB_PASSWORD}
-      ENCRYPTION_KEY: ${ENCRYPTION_KEY}
-      WEBHOOK_SECRET_KEY: ${WEBHOOK_SECRET_KEY}
-      APP_SECRET_KEY: ${APP_SECRET_KEY}
+      AP_ENVIRONMENT: prod
+      AP_FRONTEND_URL: ${APP_URL}
+      AP_WEBHOOK_TIMEOUT_SECONDS: 30
+      AP_TRIGGER_DEFAULT_POLL_INTERVAL: 5
+      AP_POSTGRES_HOST: db
+      AP_POSTGRES_PORT: 5432
+      AP_POSTGRES_DATABASE: ${DB_NAME}
+      AP_POSTGRES_USERNAME: ${DB_USER}
+      AP_POSTGRES_PASSWORD: ${DB_PASSWORD}
+      AP_REDIS_HOST: redis
+      AP_REDIS_PORT: 6379
+      AP_EXECUTION_MODE: SANDBOXED
+      AP_SANDBOX_RUN_TIME_SECONDS: 600
+      AP_FLOW_WORKER_CONCURRENCY: ${WORKER_CONCURRENCY}
+      AP_JWT_SECRET: ${JWT_SECRET}
+      AP_QUEUE_MODE: REDIS
+      AP_OPENAI_API_KEY: ${OPENAI_API_KEY}
+      AP_SIGN_UP_ENABLED: ${SIGN_UP_ENABLED}
     expose:
       - 3000
     volumes:
@@ -25,7 +31,7 @@ services:
       db:
         condition: service_healthy
       redis:
-        condition: service_started
+        condition: service_healthy
     networks:
       - internal
       - nginx
@@ -33,39 +39,7 @@ services:
       resources:
         limits:
           cpus: ${LIMIT_APP_CPU:-1}
-          memory: ${LIMIT_APP_RAM:-256M}
-        reservations:
-          cpus: '0.1'
-          memory: 128M
-  worker:
-    image: activepieces/activepieces:latest
-    restart: always
-    environment:
-      WORKER: true
-      APP_ENV: production
-      WEB_APP_URL: ${WEB_APP_URL}
-      WEBHOOK_URL: ${WEBHOOK_URL}
-      REDIS_HOST: redis
-      REDIS_PASSWORD: ${REDIS_PASSWORD}
-      POSTGRES_HOST: db
-      POSTGRES_DATABASE: ${DB_NAME}
-      POSTGRES_USERNAME: ${DB_USER}
-      POSTGRES_PASSWORD: ${DB_PASSWORD}
-      ENCRYPTION_KEY: ${ENCRYPTION_KEY}
-      WEBHOOK_SECRET_KEY: ${WEBHOOK_SECRET_KEY}
-      APP_SECRET_KEY: ${APP_SECRET_KEY}
-    volumes:
-      - ${BASE_VOLUME}/automatisch:/automatisch/storage
-    depends_on:
-      app:
-        condition: service_started
-    networks:
-      - internal
-    deploy:
-      resources:
-        limits:
-          cpus: ${LIMIT_WORKER_CPU:-1}
-          memory: ${LIMIT_WORKER_RAM:-256M}
+          memory: ${LIMIT_APP_RAM:-512M}
         reservations:
           cpus: '0.1'
           memory: 128M

@@ -2,33 +2,28 @@ version: "3.9"
 
 services:
   app:
-    image: activepieces/activepieces:latest
+    image: automatischio/automatisch:latest
     restart: always
     environment:
-      AP_ENVIRONMENT: prod
-      AP_FRONTEND_URL: ${APP_URL}
-      AP_WEBHOOK_TIMEOUT_SECONDS: 30
-      AP_TRIGGER_DEFAULT_POLL_INTERVAL: 30
-      AP_POSTGRES_HOST: db
-      AP_POSTGRES_PORT: 5432
-      AP_POSTGRES_DATABASE: ${DB_NAME}
-      AP_POSTGRES_USERNAME: ${DB_USER}
-      AP_POSTGRES_PASSWORD: ${DB_PASSWORD}
-      AP_REDIS_HOST: redis
-      AP_REDIS_PORT: 6379
-      AP_REDIS_PASSWORD: ${REDIS_PASSWORD}
-      AP_EXECUTION_MODE: UNSANDBOXED
-      AP_FLOW_WORKER_CONCURRENCY: ${WORKER_CONCURRENCY}
-      AP_JWT_SECRET: ${JWT_SECRET}
-      AP_QUEUE_MODE: REDIS
-      AP_OPENAI_API_KEY: ${OPENAI_API_KEY}
-      AP_SIGN_UP_ENABLED: ${SIGN_UP_ENABLED}
-      AP_ENCRYPTION_KEY: ${ENCRYPTION_KEY}
-      AP_PIECES_SOURCE: CLOUD_AND_DB
+      PORT: 3000
+      APP_ENV: production
+      WEB_APP_URL: ${WEB_APP_URL}
+      WEBHOOK_URL: ${WEBHOOK_URL}
+      POSTGRES_HOST: db
+      POSTGRES_PORT: 5432
+      POSTGRES_DATABASE: ${DB_NAME}
+      POSTGRES_USERNAME: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+      ENCRYPTION_KEY: ${ENCRYPTION_KEY}
+      WEBHOOK_SECRET_KEY: ${WEBHOOK_SECRET_KEY}
+      APP_SECRET_KEY: ${APP_SECRET_KEY}
     expose:
-      - 80
+      - 3000
     volumes:
-      - ${BASE_VOLUME}/activepieces:/root/.activepieces
+      - ${BASE_VOLUME}/automatisch:/automatisch/storage
     depends_on:
       db:
         condition: service_healthy
@@ -43,7 +38,42 @@ services:
           cpus: ${LIMIT_APP_CPU:-1}
           memory: ${LIMIT_APP_RAM:-512M}
         reservations:
-          cpus: '0.1'
+          cpus: "0.1"
+          memory: 128M
+  worker:
+    image: automatischio/automatisch:latest
+    restart: always
+    environment:
+      WORKER: true
+      PORT: 3000
+      APP_ENV: production
+      WEB_APP_URL: ${WEB_APP_URL}
+      WEBHOOK_URL: ${WEBHOOK_URL}
+      POSTGRES_HOST: db
+      POSTGRES_PORT: 5432
+      POSTGRES_DATABASE: ${DB_NAME}
+      POSTGRES_USERNAME: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+      ENCRYPTION_KEY: ${ENCRYPTION_KEY}
+      WEBHOOK_SECRET_KEY: ${WEBHOOK_SECRET_KEY}
+      APP_SECRET_KEY: ${APP_SECRET_KEY}
+    volumes:
+      - ${BASE_VOLUME}/automatisch:/automatisch/storage
+    depends_on:
+      app:
+        condition: service_started
+    networks:
+      - internal
+    deploy:
+      resources:
+        limits:
+          cpus: ${LIMIT_WORKER_CPU:-1}
+          memory: ${LIMIT_WORKER_RAM:-512M}
+        reservations:
+          cpus: "0.1"
           memory: 128M
   db:
     image: postgres:14-alpine
@@ -70,7 +100,7 @@ services:
           cpus: ${LIMIT_DB_CPU:-1}
           memory: ${LIMIT_DB_RAM:-256M}
         reservations:
-          cpus: '0.1'
+          cpus: "0.1"
           memory: 16M
   redis:
     image: redis:7-alpine
@@ -84,7 +114,7 @@ services:
       - internal
       - database
     healthcheck:
-      test: [ "CMD", "redis-cli", "--raw", "incr", "ping" ]
+      test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
       retries: 3
     deploy:
       resources:
@@ -92,7 +122,7 @@ services:
           cpus: ${LIMIT_REDIS_CPU:-1}
           memory: ${LIMIT_REDIS_RAM:-512M}
         reservations:
-          cpus: '0.1'
+          cpus: "0.1"
           memory: 16M
   db-exporter:
     image: prometheuscommunity/postgres-exporter:latest
@@ -113,9 +143,8 @@ services:
           cpus: ${LIMIT_CPU_DB_EXPORTER:-0.2}
           memory: ${LIMIT_RAM_DB_EXPORTER:-128M}
         reservations:
-          cpus: '0.1'
+          cpus: "0.1"
           memory: 10M
-
 
 networks:
   internal:

@@ -90,7 +90,7 @@ services:
       - ${BASE_VOLUME}/postgresql:/var/lib/postgresql/data
     networks:
       - internal
-      - database
+      - db-management
     healthcheck:
       test: ["CMD-SHELL", "pg_isready"]
       interval: 10s
@@ -114,7 +114,7 @@ services:
       - 6379
     networks:
       - internal
-      - database
+      - db-management
     healthcheck:
       test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
       retries: 3
@@ -152,7 +152,7 @@ networks:
   internal:
   nginx:
     external: true
-  database:
+  db-management:
     external: true
   monitoring:
     external: true
